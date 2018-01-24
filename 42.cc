@@ -6,14 +6,11 @@
 #include <iostream>
 
 
-class SyntaxError : public std::exception {
-};
+class SyntaxError : public std::exception {};
 
-class UnknownOperator : public std::exception {
-};
+class UnknownOperator : public std::exception {};
 
-class OperatorAlreadyDefined : public std::exception {
-};
+class OperatorAlreadyDefined : public std::exception {};
 
 class Lazy {
 public:
@@ -26,8 +23,6 @@ private:
 };
 
 class LazyCalculator {
-protected:
-    typedef int(*LazyFn)(Lazy, Lazy);
 private:
     mutable std::stack<Lazy> stack;
     static const int SIGNS = 128;
@@ -48,23 +43,23 @@ public:
         define_literal('0', [](){return 0;});
         define_literal('2', [](){return 2;});
         define_literal('4', [](){return 4;});
-        define_function('+', [](Lazy a, Lazy b) {return a() + b();});
-        define_function('-', [](Lazy a, Lazy b){return a() - b ();});
-        define_function('*', [](Lazy a, Lazy b){return a() * b();});
-        define_function('/', [](Lazy a, Lazy b){return a() / b ();});
+        define('+', [](Lazy a, Lazy b) {return a() + b();});
+        define('-', [](Lazy a, Lazy b){return a() - b ();});
+        define('*', [](Lazy a, Lazy b){return a() * b();});
+        define('/', [](Lazy a, Lazy b){return a() / b ();});
     }
 
     void doOperation(char c) const {
-        if (is_literal_defined[static_cast<unsigned int>(c)]) {
-            Lazy lit = literals[static_cast<unsigned int>(c)];
+        if (is_literal_defined[(unsigned char)(c)]) {
+            Lazy lit = literals[(unsigned char)(c)];
             stack.push(lit);
-        } else if (is_function_defined[static_cast<unsigned int>(c)]) {
+        } else if (is_function_defined[(unsigned char)(c)]) {
             Lazy b = stack.top();
             stack.pop();
             Lazy a = stack.top();
             stack.pop();
             stack.push(Lazy([a, b, this, c](){return this->functions
-            [static_cast<unsigned int>(c)](a, b);}));
+            [(unsigned char)(c)](a, b);}));
         } else {
             throw UnknownOperator();
         }
@@ -72,8 +67,8 @@ public:
 
 
     Lazy parse(const std::string& s) const {
-        for_each(s.begin(), s.end(), std::bind(&LazyCalculator::doOperation,
-                                               this, std::placeholders::_1));
+        for_each(s.begin(), s.end(),
+                 [this](char c){LazyCalculator::doOperation(c);});
         if (stack.size() != 1) {
             throw SyntaxError();
         }
@@ -87,24 +82,20 @@ public:
     }
 
     void define(char c, std::function<int(Lazy, Lazy)> fn) {
-        if (is_function_defined[static_cast<unsigned int>(c)]
-            || is_literal_defined[static_cast<unsigned int>(c)]) {
+        if (is_function_defined[(unsigned char)(c)]
+            || is_literal_defined[(unsigned char)(c)]) {
             throw OperatorAlreadyDefined();
         }
         functions[static_cast<unsigned int>(c)] = std::move(fn);
         is_function_defined[static_cast<unsigned int>(c)] = true;
     }
 
-    void define_function(char c, LazyFn f) {
-        define(c, f);
-    }
-
     void define_literal(char c, std::function<int()> fn) {
-        if (is_literal_defined[static_cast<unsigned int>(c)]) {
+        if (is_literal_defined[(unsigned char)(c)]) {
             throw OperatorAlreadyDefined();
         }
         literals[static_cast<unsigned int>(c)] = std::move(fn);
-        is_literal_defined[static_cast<unsigned int>(c)] = true;
+        is_literal_defined[(unsigned char)(c)] = true;
     }
 };
 
