@@ -25,7 +25,7 @@ private:
 class LazyCalculator {
 private:
     mutable std::stack<Lazy> stack;
-    static const int SIGNS = 128;
+    static const int SIGNS = std::numeric_limits<unsigned char>::max() + 1;
     std::function<int(Lazy, Lazy)> functions[SIGNS];
     std::function<int()> literals[SIGNS];
     bool is_function_defined[SIGNS];
